@@ -5,6 +5,7 @@ import create from 'zustand';
 
 export interface ChatInfo {
   replying: string | null;
+  inlineReply: string | null;
   blocks: ChatBlock[];
   unread?: {
     readTimeout: number;
@@ -20,6 +21,7 @@ export interface ChatStore {
   atBottom: boolean;
   current: string;
   reply: (flag: string, msgId: string | null) => void;
+  replyInline: (flag: string, msgId: string | null) => void;
   setBlocks: (whom: string, blocks: ChatBlock[]) => void;
   seen: (whom: string) => void;
   read: (whom: string) => void;
@@ -31,6 +33,7 @@ export interface ChatStore {
 
 const emptyInfo: ChatInfo = {
   replying: null,
+  inlineReply: null,
   blocks: [],
   unread: undefined,
 };
@@ -57,6 +60,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           draft.chats[flag] = { replying: msgId, blocks: [] };
         } else {
           draft.chats[flag].replying = msgId;
+        }
+      })
+    );
+  },
+  replyInline: (flag, msgId) => {
+    set(
+      produce((draft) => {
+        if (!draft.chats[flag]) {
+          draft.chats[flag] = { inlineReply: msgId, blocks: [] };
+        } else {
+          draft.chats[flag].inlineReply = msgId;
         }
       })
     );

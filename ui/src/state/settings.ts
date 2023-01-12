@@ -71,9 +71,11 @@ interface BaseSettingsState {
     messagesFilter: SidebarFilter;
   };
   groups: {
+    groupFolders: string;
     orderedGroupPins: string[];
     sideBarSort: typeof ALPHABETICAL | typeof DEFAULT | typeof RECENT;
     groupSideBarSort: Stringified<GroupSideBarSort>;
+    bookmarks: { [key: string]: string };
   };
   loaded: boolean;
   putEntry: (bucket: string, key: string, value: Value) => Promise<void>;
@@ -140,20 +142,22 @@ export const useSettingsState = createState<BaseSettingsState>(
       settings: '' as Stringified<DiarySetting[]>,
     },
     groups: {
+      groupFolders: JSON.stringify([]),
       orderedGroupPins: [],
-      sideBarSort: DEFAULT,
+      sideBarSort: RECENT,
       groupSideBarSort: '{"~": "A → Z"}' as Stringified<GroupSideBarSort>,
+      bookmarks: {},
     },
     talk: {
       messagesFilter: filters.dms,
     },
     loaded: false,
     putEntry: async (bucket, key, val) => {
-      const poke = doPutEntry(window.desk, bucket, key, val);
+      const poke = doPutEntry('groups', bucket, key, val);
       await pokeOptimisticallyN(useSettingsState, poke, reduceUpdate);
     },
     fetchAll: async () => {
-      const grResult = (await api.scry<DeskData>(getDeskSettings(window.desk)))
+      const grResult = (await api.scry<DeskData>(getDeskSettings('groups')))
         .desk;
       const lsResult = (await api.scry<DeskData>(getDeskSettings(lsDesk))).desk;
       const newState = {
@@ -162,13 +166,24 @@ export const useSettingsState = createState<BaseSettingsState>(
         ),
         loaded: true,
       };
-      set(newState);
+
+      const oldLsResult = (await api.scry<DeskData>(getDeskSettings('landscape')))
+        .desk;
+
+      if (oldLsResult?.groupSorter?.order && (get().groups.groupFolders === '[]' || !get().groups.groupFolders)) {
+        const groupFolders = (oldLsResult.groupSorter.order as string).replace(/\/ship\//g, '');
+
+        get().putEntry('groups', 'groupFolders', groupFolders);
+        set({ ...newState, groups: { ...(newState.groups || {}), groupFolders } });
+      } else {
+        set(newState);
+      }
     },
   }),
   ['display', 'heaps', 'diary', 'groups', 'talk'],
   [
     (set, get) =>
-      createSubscription('settings-store', `/desk/${window.desk}`, (e) => {
+      createSubscription('settings-store', `/desk/${'groups'}`, (e) => {
         const data = _.get(e, 'settings-event', false);
         if (data) {
           reduceStateN(get(), data, reduceUpdate);

@@ -103,8 +103,8 @@ const SidebarItem = React.forwardRef<HTMLLIElement, SidebarProps>(
       return null;
     };
 
-    return (
-      <Wrapper
+  return (
+    <Wrapper
         ref={ref as any}
         onMouseEnter={() => {
           setHover(true);
@@ -127,12 +127,12 @@ const SidebarItem = React.forwardRef<HTMLLIElement, SidebarProps>(
           color,
           !hasHoverColor() && !active ? `hover:${highlight}` : null,
           !hasHoverColor() && active && to !== '/' ? 'bg-gray-100' : null
-        )}
-      >
+      )}
+    >
         <Action
           to={to}
           className={cn(
-            'default-focus flex w-full flex-1 items-center space-x-3 rounded-lg p-2 font-semibold',
+            'default-focus flex w-full flex-1 items-center space-x-3 rounded-lg p-1 font-semibold',
             className
           )}
           {...rest}
@@ -145,6 +145,7 @@ const SidebarItem = React.forwardRef<HTMLLIElement, SidebarProps>(
               isMobile ? 'line-clamp-1' : 'truncate',
               actions && 'pr-4'
             )}
+            style={{ fontSize: 13 }}
           >
             {children}
           </div>

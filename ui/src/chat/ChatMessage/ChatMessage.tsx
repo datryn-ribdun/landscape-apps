@@ -38,6 +38,7 @@ export interface ChatMessageProps {
   isLast?: boolean;
   isLinked?: boolean;
   isScrolling?: boolean;
+  setThreadInset?: (thread: string) => void;
 }
 
 function briefMatches(brief: ChatBrief, id: string): boolean {
@@ -60,6 +61,7 @@ const ChatMessage = React.memo<
         isLast = false,
         isLinked = false,
         isScrolling = false,
+        setThreadInset,
       }: ChatMessageProps,
       ref
     ) => {
@@ -160,12 +162,13 @@ const ChatMessage = React.memo<
           ) : null}
           {newDay && !unread ? <DateDivider date={unix} /> : null}
           {newAuthor ? <Author ship={memo.author} date={unix} /> : null}
-          <div className="group-one relative z-0 flex w-full">
+          <div className="group-one relative z-0 flex" style={{ width: 'calc(100% - 0.25em)' }}>
             {hideOptions ? null : (
               <ChatMessageOptions
                 hideReply={hideReplies}
                 whom={whom}
                 writ={writ}
+                setThreadInset={setThreadInset}
               />
             )}
             <div className="-ml-1 mr-1 py-2 text-xs font-semibold text-gray-400 opacity-0 group-one-hover:opacity-100">
@@ -174,7 +177,7 @@ const ChatMessage = React.memo<
             <div className="wrap-anywhere flex w-full">
               <div
                 className={cn(
-                  'flex w-full grow flex-col space-y-2 rounded py-1 pl-3 pr-2 group-one-hover:bg-gray-50',
+                  'flex w-full grow flex-col space-y-2 rounded py-1 px-3 pr-2 group-one-hover:bg-gray-50',
                   isReplyOp && 'bg-gray-50',
                   !isMessageDelivered && !isMessagePosted && 'text-gray-400',
                   isLinked && 'bg-blue-softer'
@@ -191,7 +194,8 @@ const ChatMessage = React.memo<
                 )}
                 {numReplies > 0 && !hideReplies ? (
                   <NavLink
-                    to={`message/${seal.id}`}
+                    onClick={() => setThreadInset && setThreadInset(seal.id)}
+                    to={setThreadInset ? '' : `message/${seal.id}`}
                     className={({ isActive }) =>
                       cn(
                         'rounded p-2 text-sm font-semibold text-blue',

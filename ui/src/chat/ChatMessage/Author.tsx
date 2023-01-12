@@ -6,9 +6,11 @@ import {
   useCopy,
 } from '@/logic/utils';
 import { useLocation } from 'react-router';
+import { FaUserFriends } from 'react-icons/fa';
 import { useModalNavigate } from '@/logic/routing';
 import Avatar from '@/components/Avatar';
 import ShipName from '@/components/ShipName';
+import usePalsState from '@/state/pals';
 
 interface AuthorProps {
   ship: string;
@@ -25,6 +27,7 @@ export default function Author({
   const location = useLocation();
   const { didCopy, doCopy } = useCopy(ship);
   const modalNavigate = useModalNavigate();
+  const { pals } = usePalsState();
   const prettyTime = date ? makePrettyTime(date) : undefined;
   const prettyDayAndTime = date ? makePrettyDayAndTime(date) : undefined;
   const prettyDayAndDateAndTime = date
@@ -36,6 +39,8 @@ export default function Author({
       state: { backgroundLocation: location },
     });
   };
+
+  const isPal = Boolean(pals.outgoing[ship.replace('~', '')]?.ack);
 
   if (!date) {
     return (
@@ -57,6 +62,7 @@ export default function Author({
             />
           )}
         </div>
+        {isPal && <FaUserFriends className='h-4 w-4' />}
       </div>
     );
   }
@@ -80,6 +86,7 @@ export default function Author({
           />
         )}
       </div>
+      {isPal && <FaUserFriends className='ml-1 h-4 w-4' />}
 
       {hideTime ? (
         <span className="hidden shrink-0 text-sm font-semibold text-gray-500 group-hover:block">

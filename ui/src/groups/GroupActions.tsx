@@ -2,6 +2,8 @@ import cn from 'classnames';
 import React, { PropsWithChildren, useCallback, useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Link, useLocation } from 'react-router-dom';
+import { useCopyToClipboard } from 'usehooks-ts';
+import { FaSlidersH } from 'react-icons/fa';
 import InviteIcon16 from '@/components/icons/InviteIcon16';
 import LinkIcon16 from '@/components/icons/LinkIcon16';
 import PinIcon16 from '@/components/icons/PinIcon16';
@@ -13,6 +15,7 @@ import LeaveIcon from '@/components/icons/LeaveIcon';
 import useIsGroupUnread from '@/logic/useIsGroupUnread';
 import UnreadIndicator from '@/components/Sidebar/UnreadIndicator';
 import { citeToPath, useCopy } from '@/logic/utils';
+import ActivityIndicator from '@/components/Sidebar/ActivityIndicator';
 
 const { ship } = window;
 
@@ -61,9 +64,9 @@ export default function GroupActions({
   className,
   children,
 }: GroupActionsProps) {
-  const { isGroupUnread } = useIsGroupUnread();
   const location = useLocation();
-  const hasActivity = isGroupUnread(flag);
+  const { getUnreadCount } = useIsGroupUnread();
+  const { unreadCount, hasNotification } = getUnreadCount(flag);
 
   const { isOpen, setIsOpen, isPinned, copyItemText, onCopy, onPinClick } =
     useGroupActions(flag);
@@ -82,16 +85,26 @@ export default function GroupActions({
         <DropdownMenu.Trigger asChild className="appearance-none">
           {children || (
             <div className="relative h-6 w-6">
-              {!isOpen && hasActivity ? (
+              {unreadCount ? (
+                <ActivityIndicator
+                  count={unreadCount}
+                  // bg='bg-inherit'
+                  className={cn(
+                    "absolute h-6 w-6 transition-opacity group-focus-within:opacity-0 group-hover:opacity-0",
+                    hasNotification && "text-blue"
+                  )}
+                  aria-label="Unreads"
+                />
+              ) : hasNotification ? (
                 <UnreadIndicator
-                  className="absolute h-6 w-6 text-blue transition-opacity group-focus-within:opacity-0 group-hover:opacity-0"
+                  className="text-blue absolute h-6 w-6 transition-opacity group-focus-within:opacity-0 group-hover:opacity-0"
                   aria-label="Has Activity"
                 />
               ) : null}
               <button
                 className={cn(
                   'default-focus absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg p-0.5 transition-opacity focus-within:opacity-100 hover:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100',
-                  hasActivity && 'text-blue',
+                  hasNotification && 'text-blue',
                   isOpen ? 'opacity:100' : 'opacity-0'
                 )}
                 aria-label="Open Group Options"
@@ -141,12 +154,22 @@ export default function GroupActions({
               <span className="pr-2">Members &amp; Group Info</span>
             </Link>
           </DropdownMenu.Item>
+          <DropdownMenu.Item asChild className="dropdown-item">
+            <Link
+              to={`/groups/${flag}/info/channels`}
+              // state={{ backgroundLocation: location }}
+              className="flex items-center space-x-2"
+            >
+              <FaSlidersH className="m-1 h-4 w-4 text-gray-600" />
+              <span className="pr-2">Manage Channels</span>
+            </Link>
+          </DropdownMenu.Item>
           {flag.includes(ship) ? null : (
             <DropdownMenu.Item asChild className="dropdown-item">
               <Link
                 to={`/groups/${flag}/leave`}
                 state={{ backgroundLocation: location }}
-                className="flex items-center space-x-2 text-red hover:bg-red-soft hover:dark:bg-red-900"
+                className="text-red hover:bg-red-soft flex items-center space-x-2 hover:dark:bg-red-900"
               >
                 <LeaveIcon className="h-6 w-6" />
                 <span className="pr-2">Leave Group</span>

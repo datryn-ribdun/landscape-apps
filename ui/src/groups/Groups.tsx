@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, useMatch, useNavigate } from 'react-router';
+import _ from 'lodash';
 import {
   useGang,
   useGroup,
@@ -13,7 +14,6 @@ import { useHeapState } from '@/state/heap/heap';
 import { useDiaryState } from '@/state/diary';
 import { useIsMobile } from '@/logic/useMedia';
 import useRecentChannel from '@/logic/useRecentChannel';
-import _ from 'lodash';
 
 function Groups() {
   const navigate = useNavigate();
@@ -32,11 +32,11 @@ function Groups() {
     if (initialized && !group && !gang) {
       navigate('/');
     } else if (initialized && group && root) {
-      const channels = Object.entries(group.channels).map(([name]) => name);
-      if (recentChannel && channels.includes(recentChannel) && !isMobile) {
-        navigate(`./channels/${recentChannel}`);
-        return;
-      }
+      // const channels = Object.entries(group.channels).map(([name]) => name);
+      // if (recentChannel && channels.includes(recentChannel) && !isMobile) {
+      //   navigate(`./channels/${recentChannel}`);
+      //   return;
+      // }
 
       // done this way to prevent too many renders from useAllBriefs
       const allBriefs = {
@@ -48,11 +48,12 @@ function Groups() {
         ([nest]) => nest in allBriefs
       );
 
-      if (channel && !isMobile) {
-        navigate(`./channels/${channel[0]}`);
-      } else if (!isMobile) {
-        navigate('./channels');
-      }
+      navigate('./channels');
+      // if (channel && !isMobile) {
+      //   navigate(`./channels/${channel[0]}`);
+      // } else if (!isMobile) {
+      //   navigate('./channels');
+      // }
     }
   }, [root, gang, group, isMobile, initialized, recentChannel, navigate]);
 

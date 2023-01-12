@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import cn from 'classnames';
-import { Outlet, useParams } from 'react-router';
+import { Outlet, useNavigate, useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 import ChatInput from '@/chat/ChatInput/ChatInput';
 import Layout from '@/components/Layout/Layout';

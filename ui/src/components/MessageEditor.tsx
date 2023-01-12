@@ -25,6 +25,7 @@ import useFileUpload from '@/logic/useFileUpload';
 import { useFileStore } from '@/state/storage';
 import { EditorProps } from 'prosemirror-view';
 import MentionPopup from './Mention/MentionPopup';
+import { useGroup, useRouteGroup } from '@/state/groups';
 
 interface HandlerParams {
   editor: Editor;
@@ -227,6 +228,7 @@ export default function MessageEditor({
   const isMobile = useIsMobile();
   return (
     <div className={cn('input block p-0', className)}>
+      {/* <AutocompletePatp editor={editor} /> */}
       {/* This is nested in a div so that the bubble  menu is keyboard accessible */}
       <EditorContent className={cn('w-full', inputClassName)} editor={editor} />
       {!isMobile ? <ChatInputMenu editor={editor} /> : null}

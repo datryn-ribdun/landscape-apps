@@ -311,7 +311,7 @@ export default function GroupList({
           : undefined
       }
     >
-      <li className="-mx-2 mt-5 grow border-t-2 border-gray-50 pt-3 pb-2">
+      <li className="-mx-2 mt-1 grow border-t-2 border-gray-50 pt-3 pb-2">
         <span className="ml-4 text-sm font-semibold text-gray-400">
           Pinned Groups
         </span>

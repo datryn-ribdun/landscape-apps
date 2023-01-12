@@ -23,6 +23,10 @@
     format('woff2');
 }
 
+body {
+  overflow: hidden;
+}
+
 /* Works on Firefox */
 * {
   scrollbar-width: thin;

@@ -1,14 +1,14 @@
 import { isValidPatp } from 'urbit-ob';
 import classNames from 'classnames';
 import React, { CSSProperties, useState } from 'react';
-import { sigil as sigilRaw, reactRenderer } from '@tlon/sigil-js';
-import { deSig, Contact, cite } from '@urbit/api';
+import { sigil as sigilRaw, reactRenderer, stringRenderer } from '@tlon/sigil-js';
+import { deSig, Contact, cite, uxToHex } from '@urbit/api';
 import _ from 'lodash';
 import { darken, lighten, parseToHsla } from 'color2k';
 import { useCalm } from '@/state/settings';
 import { useCurrentTheme } from '@/state/local';
 import { normalizeUrbitColor, isValidUrl } from '@/logic/utils';
-import { useContact } from '@/state/contact';
+import useContactState, { useContact } from '@/state/contact';
 import { useAvatar } from '@/state/avatar';
 
 export type AvatarSizes = 'xs' | 'small' | 'default' | 'huge';
@@ -236,3 +236,19 @@ export function useProfileColor(
   );
   return adjustedColor;
 }
+
+export const favicon = () => {
+  let background = '#ffffff';
+  const { contacts } = useContactState.getState();
+  if (Object.prototype.hasOwnProperty.call(contacts, `~${window.ship}`)) {
+    background = `#${uxToHex(contacts[`~${window.ship}`].color)}`;
+  }
+  const foreground = foregroundFromBackground(background);
+  const svg = sigilRaw({
+    patp: window.ship,
+    renderer: stringRenderer,
+    size: 16,
+    colors: [background, foreground]
+  });
+  return svg;
+};

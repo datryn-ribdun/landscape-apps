@@ -89,7 +89,7 @@ export default function useSidebarSort({
       const aVal = accessor(aKey, aObj);
       const bVal = accessor(bKey, bObj);
 
-      const sorter = sortOptions[sortFn] ?? sortOptions[ALPHABETICAL];
+      const sorter = sortOptions[sortFn] ?? sortOptions[RECENT];
       return sorter(aVal, bVal);
     });
 

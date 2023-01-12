@@ -3,6 +3,7 @@ import { ChatStore, useChatStore } from '@/chat/useChatStore';
 import useAllBriefs from '@/logic/useAllBriefs';
 import { useCallback } from 'react';
 import { nestToFlag } from './utils';
+import { useNotifications } from '@/notifications/useNotifications';
 
 const selChats = (s: ChatStore) => s.chats;
 
@@ -43,6 +44,21 @@ export function useChannelUnreadCounts(args: ChannelUnreadCount) {
   }
 }
 
+function getChannelUnreadCount(
+  nest: string,
+  briefs: ReturnType<typeof useAllBriefs>,
+  chats: ChatStore['chats']
+) {
+  const [app, chFlag] = nestToFlag(nest);
+  const unread = chats[chFlag]?.unread;
+
+  if (app === 'chat') {
+    return unread?.brief?.count ?? 0;
+  }
+
+  return (briefs[nest]?.count ?? 0);
+}
+
 export function useCheckChannelUnread() {
   const briefs = useAllBriefs();
   const chats = useChatStore(selChats);
@@ -53,9 +69,38 @@ export function useCheckChannelUnread() {
   );
 }
 
+export function useCheckChannelNotification() {
+  const { notifications } = useNotifications();
+
+  return useCallback(
+    (nest: string) => notifications.some((n) =>
+      n.bins.some(
+        (b) =>
+          b.unread &&
+          b.topYarn?.rope.channel &&
+          b.topYarn?.wer.includes(nest)
+      )
+    ),
+    [notifications]
+  );
+}
+
+export function useCheckChannelUnreadCount() {
+  const briefs = useAllBriefs();
+  const chats = useChatStore(selChats);
+
+  return useCallback(
+    (nest: string) => getChannelUnreadCount(nest, briefs, chats),
+    [briefs, chats]
+  );
+}
+
 export default function useIsChannelUnread(nest: string) {
   const briefs = useAllBriefs();
   const chats = useChatStore(selChats);
 
-  return channelUnread(nest, briefs, chats);
+  return {
+    isChannelUnread: channelUnread(nest, briefs, chats),
+    channelUnreadCount: getChannelUnreadCount(nest, briefs, chats),
+  };
 }

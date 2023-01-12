@@ -25,6 +25,26 @@ export default function ShipName({
   const parts = citedName.replace('~', '').split(separator);
   const first = parts.shift();
 
+  // Moons
+  if (name.length > 25 && name.length < 30) {
+    const patp = name.replace('~', '');
+
+    return (
+      <span {...props}>
+        <span className='align-top text-xs'>
+          <span aria-hidden>~</span>
+          {patp.slice(0, 6)}
+          <span aria-hidden>-</span>
+          {patp.slice(7, 13)}
+        </span>
+        <span aria-hidden>^</span>
+        <span>{patp.slice(14, 20)}</span>
+        <span aria-hidden>-</span>
+        <span>{patp.slice(21, 27)}</span>
+      </span>
+    );
+  }
+
   return (
     <span {...props}>
       {contact?.nickname && !calm.disableNicknames && showAlias ? (

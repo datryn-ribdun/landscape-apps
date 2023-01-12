@@ -79,7 +79,8 @@ export default function ChatInput({
   const subscription = useSubscriptionStatus();
   const pact = usePact(whom);
   const chatInfo = useChatInfo(whom);
-  const reply = replying || chatInfo?.replying || null;
+  const inlineReply = chatInfo?.inlineReply;
+  const reply = replying || chatInfo?.replying || inlineReply || null;
   const replyingWrit = reply && pact.writs.get(pact.index[reply]);
   const ship = replyingWrit && replyingWrit.memo.author;
   const isMobile = useIsMobile();
@@ -91,6 +92,7 @@ export default function ChatInput({
 
   const closeReply = useCallback(() => {
     useChatStore.getState().reply(whom, null);
+    useChatStore.getState().replyInline(whom, null);
   }, [whom]);
 
   useEffect(() => {
@@ -161,14 +163,23 @@ export default function ChatInput({
 
         fileId.current = `chat-input-${Math.floor(Math.random() * 1000000)}`;
       } else {
+        const allBlocks = inlineReply ? [{
+          cite: {
+            chan: {
+              nest: `chat/${whom}`,
+              where: `/msg/${inlineReply}`
+            }
+          }
+        }, ...blocks] : blocks;
+
         const memo: ChatMemo = {
-          replying: reply,
+          replying: inlineReply ? null : reply,
           author: `~${window.ship || 'zod'}`,
           sent: 0, // wait until ID is created so we can share time
           content: {
             story: {
               inline: Array.isArray(data) ? data : [data],
-              block: blocks,
+              block: allBlocks,
             },
           },
         };
@@ -180,7 +191,7 @@ export default function ChatInput({
       setTimeout(() => closeReply(), 0);
       clearAttachments();
     },
-    [whom, clearAttachments, mostRecentFile, sendMessage, reply, closeReply]
+    [whom, clearAttachments, mostRecentFile, sendMessage, reply, closeReply, inlineReply]
   );
 
   const messageEditor = useMessageEditor({
@@ -208,14 +219,14 @@ export default function ChatInput({
 
   useEffect(() => {
     if (
-      (autoFocus || reply) &&
+      (autoFocus || reply || inlineReply) &&
       !isMobile &&
       messageEditor &&
       !messageEditor.isDestroyed
     ) {
       messageEditor.commands.focus();
     }
-  }, [autoFocus, reply, isMobile, messageEditor]);
+  }, [autoFocus, reply, inlineReply, isMobile, messageEditor]);
 
   useEffect(() => {
     if (mostRecentFile && messageEditor && !messageEditor.isDestroyed) {

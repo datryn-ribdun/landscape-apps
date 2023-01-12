@@ -40,6 +40,7 @@ async function setupAPI() {
     api.ship = window.ship;
     api.verbose = import.meta.env.DEV;
     client = api;
+    (window as any).api = api;
   }
 
   client.onError = () => {

@@ -14,6 +14,7 @@ import { whomIsMultiDm } from '@/logic/utils';
 import PeopleIcon from '@/components/icons/PeopleIcon';
 import useIsChannelUnread from '@/logic/useIsChannelUnread';
 import DmInviteDialog from './DmInviteDialog';
+import ActivityIndicator from '@/components/Sidebar/ActivityIndicator';
 
 interface DMOptionsProps {
   whom: string;
@@ -33,8 +34,8 @@ export default function DmOptions({
   const location = useLocation();
   const navigate = useNavigate();
   const pinned = usePinned();
-  const isUnread = useIsChannelUnread(`chat/${whom}`);
-  const hasActivity = isUnread || pending;
+  const { channelUnreadCount: unreadCount } = useIsChannelUnread(`chat/${whom}`);
+  const hasActivity = pending;
   const [isOpen, setIsOpen] = useState(false);
   const [inviteIsOpen, setInviteIsOpen] = useState(false);
   const onArchive = () => {
@@ -94,12 +95,16 @@ export default function DmOptions({
       <DropdownMenu.Root onOpenChange={(open) => setIsOpen(open)} open={isOpen}>
         <DropdownMenu.Trigger asChild className="appearance-none">
           <div className="relative h-6 w-6">
-            {!alwaysShowEllipsis && !isOpen && hasActivity ? (
-              <BulletIcon
-                className="absolute h-6 w-6 text-blue transition-opacity group-focus-within:opacity-0 group-hover:opacity-0"
-                aria-label="Has Activity"
-              />
-            ) : null}
+            {!alwaysShowEllipsis && !isOpen && (
+              unreadCount > 0 ? (
+                <ActivityIndicator count={unreadCount} />
+              ) : hasActivity ? (
+                <BulletIcon
+                  className="absolute h-6 w-6 text-blue transition-opacity group-focus-within:opacity-0 group-hover:opacity-0"
+                  aria-label="Has Activity"
+                />
+              ) : null
+            )} 
             <button
               className={cn(
                 'default-focus absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg p-0.5 transition-opacity focus-within:opacity-100 hover:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100',

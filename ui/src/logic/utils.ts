@@ -88,6 +88,8 @@ export function makePrettyDate(date: Date) {
   return `${format(date, 'PPP')}`;
 }
 
+export const svgDataURL = (svg: string) => `data:image/svg+xml;base64,${btoa(svg)}`;
+
 export function makePrettyDayAndTime(date: Date) {
   const diff = differenceInDays(endOfToday(), date);
   const time = makePrettyTime(date);
@@ -494,3 +496,11 @@ export function isChannelImported(
     !isImport || (isImport && pending[nest]) || window.our === getNestShip(nest)
   );
 }
+
+export const postReactNativeMessage = (data: any) => {
+  if ((window as any).ReactNativeWebView?.postMessage) {
+    (window as any).ReactNativeWebView.postMessage(JSON.stringify(data));
+  }
+};
+
+export const isChannelInset = () => Boolean(new URL(window.location.href).searchParams.get("channel-inset"));

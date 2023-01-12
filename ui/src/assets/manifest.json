@@ -1,6 +1,6 @@
 {
-  "name": "Groups",
-  "short_name": "Groups",
+  "name": "EScape",
+  "short_name": "EScape",
   "start_url": "./apps/groups",
   "scope": "./",
   "icons": [

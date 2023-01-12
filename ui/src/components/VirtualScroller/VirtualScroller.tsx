@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, { Component, CSSProperties, ReactNode, useCallback } from 'react';
+import React, { Component, CSSProperties, ReactNode, SyntheticEvent, useCallback } from 'react';
 import { VirtualContext } from './VirtualContext';
 import clamp from './util';
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
@@ -21,7 +21,7 @@ function Center(props: React.HTMLProps<HTMLDivElement>) {
 interface ScrollbarLessBoxProps {
   children: ReactNode;
   style: CSSProperties;
-  onScroll: () => void;
+  onScroll: (event: SyntheticEvent<HTMLElement>) => void;
   className: string;
 }
 
@@ -167,6 +167,8 @@ export interface VirtualScrollerProps<K, V> {
    * default value for key type
    */
   keyBunt: K;
+
+  onScroll?: (event: SyntheticEvent<HTMLElement>) => void;
 }
 
 interface VirtualScrollerState<K> {
@@ -387,7 +389,10 @@ export default class VirtualScroller<K, V> extends Component<
     this.scrollDragging = false;
   };
 
-  onScroll() {
+  onScroll(event: SyntheticEvent<HTMLElement>) {
+    if (this.props.onScroll) {
+      this.props.onScroll(event);
+    }
     this.updateScroll();
     if (!this.window) {
       // bail if we're going to adjust scroll anyway

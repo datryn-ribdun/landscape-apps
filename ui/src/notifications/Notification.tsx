@@ -16,14 +16,14 @@ interface NotificationProps {
   avatar?: ReactNode;
 }
 
-function getContent(content: YarnContent) {
+function getContent(content: YarnContent, index: number) {
   if (typeof content === 'string') {
-    return <span>{content}</span>;
+    return <span key={index}>{content}</span>;
   }
 
   if ('ship' in content) {
     return (
-      <ShipName name={content.ship} className="font-semibold text-gray-800" />
+      <ShipName key={`${content.ship}-${index}`} name={content.ship} className="font-semibold text-gray-800" />
     );
   }
 
@@ -57,7 +57,11 @@ export default function Notification({
         <div className="relative flex-none self-start">{avatar}</div>
         <div className="min-w-0 grow-0 space-y-2 break-words p-1">
           {topLine}
-          <p>{bin.topYarn && bin.topYarn.con.map(getContent)}</p>
+          <p>{bin.topYarn && bin.topYarn.con.map((content, index) => (
+            <span key={index}>
+              {getContent(content, index)}
+            </span>
+          ))}</p>
           {moreCount > 0 ? (
             <p className="text-sm font-semibold">
               {moreCount} more {pluralize('message', moreCount)} from{' '}

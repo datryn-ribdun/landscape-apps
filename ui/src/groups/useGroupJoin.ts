@@ -59,7 +59,7 @@ export default function useGroupJoin(
       try {
         await useHarkState.getState().sawRope({
           channel: null,
-          desk: window.desk,
+          desk: 'groups',
           group: flag,
           thread: `/${flag}/invite`,
         });

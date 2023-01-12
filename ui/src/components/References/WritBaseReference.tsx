@@ -1,14 +1,16 @@
 import React from 'react';
+import cn from 'classnames';
 import { Link } from 'react-router-dom';
 import { useWritByFlagAndWritId } from '@/state/chat';
 import { useChannelPreview } from '@/state/groups';
 // eslint-disable-next-line import/no-cycle
 import ChatContent from '@/chat/ChatContent/ChatContent';
-import { udToDec } from '@urbit/api';
+import { daToUnix, udToDec } from '@urbit/api';
 import bigInt from 'big-integer';
 import HeapLoadingBlock from '@/heap/HeapLoadingBlock';
 import { ChatWrit } from '@/types/chat';
 import ReferenceBar from './ReferenceBar';
+import Author from '@/chat/ChatMessage/Author';
 
 export default function WritBaseReference({
   chFlag,
@@ -29,13 +31,22 @@ export default function WritBaseReference({
   }
 
   const time = bigInt(udToDec(writ.seal.id.split('/')[1]));
+  const isInlineReply = nest.includes(chFlag);
 
   if (!('story' in writ.memo.content)) {
     return null;
   }
 
   return (
-    <div className="writ-inline-block not-prose group">
+    <div className={cn(
+      "writ-inline-block not-prose group",
+      isInlineReply && 'bg-gray-50',
+    )}>
+      {isInlineReply && (
+        <div className='ml-2 mt-1'>
+          <Author ship={writ.memo.author} date={new Date(daToUnix(time))} />
+        </div>
+      )}
       <Link
         to={
           preview?.group
@@ -44,17 +55,19 @@ export default function WritBaseReference({
         }
         className="cursor-pointer p-2 group-hover:bg-gray-50"
       >
-        <ChatContent story={writ.memo.content.story} isScrolling={false} />
+        <ChatContent story={writ.memo.content.story} isScrolling={false} isInlineReply={isInlineReply} />
       </Link>
-      <ReferenceBar
-        nest={nest}
-        time={time}
-        author={writ.memo.author}
-        unSubbed
-        groupFlag={preview?.group.flag}
-        groupTitle={preview?.group.meta.title}
-        channelTitle={preview?.meta?.title}
-      />
+      {!isInlineReply && (
+        <ReferenceBar
+          nest={nest}
+          time={time}
+          author={writ.memo.author}
+          unSubbed
+          groupFlag={preview?.group.flag}
+          groupTitle={preview?.group.meta.title}
+          channelTitle={preview?.meta?.title}
+        />
+      )}
     </div>
   );
 }

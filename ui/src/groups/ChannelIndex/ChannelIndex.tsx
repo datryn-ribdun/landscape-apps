@@ -35,6 +35,8 @@ import MigrationTooltip from '@/components/MigrationTooltip';
 import { useStartedMigration } from '@/logic/useMigrationInfo';
 import useFilteredSections from '@/logic/useFilteredSections';
 import EditChannelModal from '../GroupAdmin/AdminChannels/EditChannelModal';
+import useIsChannelUnread, { useCheckChannelUnreadCount } from '@/logic/useIsChannelUnread';
+import ActivityIndicator from '@/components/Sidebar/ActivityIndicator';
 
 const UNZONED = 'default';
 
@@ -64,6 +66,7 @@ function GroupChannel({
   const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const getUnread = useCheckChannelUnreadCount();
   const { isFailed, isPending, isReady, setFailed, setPending, setReady } =
     useRequestState();
   const join = useCallback(
@@ -158,10 +161,10 @@ function GroupChannel({
           <div className="mr-3 flex h-12 w-12 items-center justify-center rounded bg-gray-50">
             <ChannelIcon nest={nest} className="h-6 w-6 text-gray-400" />
           </div>
-          <div className="flex flex-col justify-evenly">
+          <div className="flex flex-row items-center justify-evenly">
             {joined && imported && nest ? (
               <Link
-                className="font-semibold text-gray-800"
+                className="mr-2 flex flex-row font-semibold text-gray-800"
                 to={channelHref(groupFlag, nest)}
               >
                 {channel.meta.title}
@@ -171,6 +174,7 @@ function GroupChannel({
                 {channel.meta.title}
               </div>
             )}
+            {nest && getUnread(nest) > 0 && <ActivityIndicator count={getUnread(nest)} />}
           </div>
         </div>
       </button>

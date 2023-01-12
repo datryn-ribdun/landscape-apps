@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 
 // https://vitejs.dev/config/
 export default ({ mode }: { mode: string }) => {
-  const app = process.env.APP || 'groups';
+  const app = process.env.APP || 'escape';
   process.env.VITE_APP = app;
   process.env.VITE_STORAGE_VERSION =
     mode === 'dev' ? Date.now().toString() : packageJson.version;
@@ -54,7 +54,7 @@ export default ({ mode }: { mode: string }) => {
       default:
         return [
           urbitPlugin({
-            base: 'groups',
+            base: 'escape',
             target: SHIP_URL,
             changeOrigin: true,
             secure: false,

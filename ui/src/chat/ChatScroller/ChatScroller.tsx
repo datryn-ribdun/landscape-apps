@@ -2,6 +2,7 @@ import cn from 'classnames';
 import React, {
   HTMLAttributes,
   ReactNode,
+  SyntheticEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -28,6 +29,7 @@ import { IChatScroller } from './IChatScroller';
 import ChatMessage from '../ChatMessage/ChatMessage';
 import { ChatInfo, useChatStore } from '../useChatStore';
 import ChatNotice from '../ChatNotice';
+import CaretDownIcon from '@/components/icons/CaretDownIcon';
 
 interface CreateRendererParams {
   messages: BigIntOrderedMap<ChatWrit>;
@@ -39,6 +41,7 @@ interface CreateRendererParams {
   prefixedElement: React.ReactNode;
   scrollTo?: bigInt.BigInteger;
   isScrolling: boolean;
+  setThreadInset?: (thread: string) => void;
 }
 
 interface RendererProps {
@@ -53,6 +56,7 @@ function createRenderer({
   prefixedElement,
   scrollTo,
   isScrolling,
+  setThreadInset,
 }: CreateRendererParams) {
   const renderPrefix = (index: bigInt.BigInteger, child: ReactNode) => (
     <>
@@ -105,6 +109,7 @@ function createRenderer({
           isLast={keyIdx === keys.length - 1}
           isLinked={scrollTo ? index.eq(scrollTo) : false}
           isScrolling={isScrolling}
+          setThreadInset={setThreadInset}
         />
       );
     }
@@ -131,6 +136,10 @@ const List = React.forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   )
 );
 
+interface ChatScrollerProps extends IChatScroller {
+  setThreadInset?: (thread: string) => void;
+}
+
 export default function ChatScroller({
   whom,
   messages,
@@ -138,7 +147,9 @@ export default function ChatScroller({
   prefixedElement,
   scrollTo = undefined,
   scrollerRef,
-}: IChatScroller) {
+  setThreadInset,
+
+}: ChatScrollerProps) {
   const brief = useChatState((s: ChatState) => s.briefs[whom]);
   const firstUnreadID = useGetFirstUnreadID(whom);
   const loaded = useLoadedWrits(whom);
@@ -180,8 +191,9 @@ export default function ChatScroller({
         prefixedElement,
         scrollTo,
         isScrolling,
+        setThreadInset,
       }),
-    [messages, whom, keys, replying, prefixedElement, scrollTo, isScrolling]
+    [messages, whom, keys, replying, prefixedElement, scrollTo, isScrolling, setThreadInset]
   );
 
   const TopLoader = useMemo(
@@ -273,6 +285,11 @@ export default function ChatScroller({
     [isScrolling, atBottom]
   );
 
+  const scrollToEnd = useCallback(() => {
+    const lastIdx = keys[keys.length - 1];
+    scrollerRef.current?.scrollToIndex(lastIdx.toJSNumber());
+  }, [scrollerRef, keys]);
+
   if (keys.length === 0) {
     return null;
   }
@@ -321,6 +338,11 @@ export default function ChatScroller({
           List,
         }}
       />
+      {!atBottom && <div className='absolute bottom-3 right-3'>
+        <button className='small-button' onClick={scrollToEnd}>
+          <CaretDownIcon className='h-6 w-8' />
+        </button>
+      </div>}
     </div>
   );
 }

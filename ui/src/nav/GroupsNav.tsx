@@ -22,7 +22,7 @@ export function DesktopNav() {
   return (
     <div className="relative flex h-full w-64 flex-none overflow-hidden border-r-2 border-gray-50 bg-white">
       <AnimatePresence initial={false}>
-        {match || backgroundLocationMatch ? (
+        {/* {match || backgroundLocationMatch ? (
           <motion.div
             key="group"
             className="absolute h-full"
@@ -33,7 +33,7 @@ export function DesktopNav() {
           >
             <GroupSidebar />
           </motion.div>
-        ) : (
+        ) : ( */}
           <motion.div
             key="main"
             className="absolute h-full"
@@ -44,17 +44,16 @@ export function DesktopNav() {
           >
             <Sidebar />
           </motion.div>
-        )}
+        {/* )} */}
       </AnimatePresence>
     </div>
   );
 }
 
-export default function GroupsNav() {
-  const isMobile = useIsMobile();
+export default function GroupsNav({ show }: { show: boolean }) {
   return (
     <div className="flex h-full w-full">
-      {isMobile ? null : <DesktopNav />}
+      {show && <DesktopNav />}
       <Outlet />
     </div>
   );

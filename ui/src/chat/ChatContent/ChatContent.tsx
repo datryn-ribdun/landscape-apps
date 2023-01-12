@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import cn from 'classnames';
 import { findLastIndex } from 'lodash';
 import { ChatBlock, isChatImage, ChatStory } from '@/types/chat';
 import {
@@ -19,9 +20,11 @@ import ContentReference from '@/components/References/ContentReference';
 import { useLocation } from 'react-router';
 import ShipName from '@/components/ShipName';
 import { Link } from 'react-router-dom';
+import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
 
 interface ChatContentProps {
   story: ChatStory;
+  isInlineReply?: boolean;
   isScrolling?: boolean;
 }
 
@@ -163,16 +166,23 @@ export function BlockContent({ story, isScrolling }: BlockContentProps) {
 
 export default function ChatContent({
   story,
+  isInlineReply = false,
   isScrolling = false,
 }: ChatContentProps) {
   const inlineLength = story.inline.length;
   const blockLength = story.block.length;
   const firstBlockCode = story.inline.findIndex(isBlockCode);
   const lastBlockCode = findLastIndex(story.inline, isBlockCode);
+  const [expanded, setExpanded] = useState(false);
+  const iconClasses = 'pointer p-1 mr-1 -ml-1 inline';
 
   return (
-    <div className="leading-6">
-      {blockLength > 0 ? (
+    <div className={cn("leading-6", isInlineReply && !expanded && 'truncate')}>
+      {!isInlineReply ? null : expanded ?
+        <FaChevronDown style={{ height: '1.5em', width: '1.5em', marginTop: '-2px' }} className={iconClasses} onClick={e => {e.stopPropagation(); e.preventDefault(); setExpanded(false);}} /> :
+        <FaChevronRight style={{ height: '1.5em', width: '1.5em', marginTop: '-2px' }} className={iconClasses} onClick={e => {e.stopPropagation(); e.preventDefault(); setExpanded(true);}} />
+      }
+      {blockLength > 0 && !isInlineReply ? (
         <>
           {story.block
             .filter((a) => !!a)

@@ -305,6 +305,7 @@ export default function ChannelHeader({
 }: ChannelHeaderProps) {
   const group = useGroup(flag);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const channel = useChannel(flag, nest);
   const groupName = group?.meta.title;
   const BackButton = isMobile ? Link : 'div';
@@ -332,7 +333,7 @@ export default function ChannelHeader({
   return (
     <div
       className={cn(
-        'flex h-full items-center justify-between border-b-2 border-gray-50 bg-white p-2'
+        'flex h-full items-center justify-between border-b-2 border-gray-50 bg-white p-1'
       )}
     >
       <BackButton
@@ -342,6 +343,7 @@ export default function ChannelHeader({
           isMobile && '-ml-2 flex items-center rounded-lg pr-0 hover:bg-gray-50'
         )}
         aria-label="Open Channels Menu"
+        onClick={() => isMobile && navigate('/')}
       >
         {isMobile ? (
           <CaretLeftIcon className="mr-1 h-5 w-5 shrink-0 text-gray-500" />

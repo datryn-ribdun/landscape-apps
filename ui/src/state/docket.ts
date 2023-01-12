@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 import create, { SetState } from 'zustand';
 import { useCallback, useEffect, useState } from 'react';
 import { omit, pick } from 'lodash';
+import api from '@/api';
+import { normalizeUrbitColor } from '@/logic/utils';
 import {
   Allies,
   Charge,
@@ -23,10 +24,9 @@ import {
   kilnSuspend,
   allyShip,
 } from '@urbit/api';
-import { normalizeUrbitColor } from '@/logic/utils';
-import api from '../api';
 
 export type Status = 'initial' | 'loading' | 'success' | 'error';
+
 export interface ChargeWithDesk extends Charge {
   desk: string;
 }
@@ -91,7 +91,6 @@ const useDocketState = create<DocketState>((set, get) => ({
   },
   requestTreaty: async (ship: string, desk: string) => {
     const { treaties } = get();
-
     const key = `${ship}/${desk}`;
     if (key in treaties) {
       return treaties[key];

@@ -1,10 +1,12 @@
 import React from 'react';
 import cn from 'classnames';
 import { NavLink, Outlet } from 'react-router-dom';
-import { useAmAdmin, useRouteGroup } from '@/state/groups/groups';
+import { useAmAdmin, useGroup, useRouteGroup } from '../../state/groups/groups';
+import GroupAvatar from '../GroupAvatar';
 
 export default function GroupAdmin() {
   const flag = useRouteGroup();
+  const group = useGroup(flag);
   const isAdmin = useAmAdmin(flag);
 
   return (
@@ -14,6 +16,9 @@ export default function GroupAdmin() {
           <header className="card mb-4 p-2">
             <nav>
               <ul className="flex items-center font-semibold text-gray-400">
+                <li className='ml-2'>
+                  <GroupAvatar size={`${'h-5 w-5'} mr-2`} {...group?.meta} />
+                </li>
                 <li>
                   <NavLink
                     to="../info"

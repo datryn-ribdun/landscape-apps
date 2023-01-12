@@ -43,7 +43,7 @@ function ChannelSidebarItem({
       to={`/groups/${groupFlag}/channels/${nest}`}
       icon={
         <GroupAvatar
-          size="h-12 w-12 sm:h-6 sm:w-6"
+          size="h-6 w-6"
           {...group?.meta}
           loadImage={!isScrolling}
         />
@@ -64,7 +64,7 @@ function DMSidebarItem({ whom, brief, pending }: MessagesSidebarItemProps) {
       to={`/dm/${whom}`}
       icon={
         <Avatar
-          size={isMobile ? 'default' : 'xs'}
+          size={'xs'}
           ship={whom}
           loadImage={!isScrolling}
         />
@@ -100,12 +100,12 @@ export function MultiDMSidebarItem({
       to={`/dm/${whom}`}
       icon={
         pending ? (
-          <UnknownAvatarIcon className="h-12 w-12 rounded-md text-blue md:h-6 md:w-6" />
+          <UnknownAvatarIcon className="h-6 w-6 rounded-md text-blue" />
         ) : (
           <MultiDmAvatar
             {...club?.meta}
             title={groupName}
-            size={isMobile ? 'default' : 'xs'}
+            size={'xs'}
             loadImage={!isScrolling}
           />
         )

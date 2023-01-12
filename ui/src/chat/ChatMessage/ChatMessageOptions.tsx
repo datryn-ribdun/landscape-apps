@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useCopy } from '@/logic/utils';
+import { useCopy, whomIsDm } from '@/logic/utils';
 import { useAmAdmin, useRouteGroup } from '@/state/groups';
 import { useChatState } from '@/state/chat';
 import { ChatWrit } from '@/types/chat';
@@ -15,13 +15,16 @@ import { useChatStore } from '@/chat/useChatStore';
 import CopyIcon from '@/components/icons/CopyIcon';
 import CheckIcon from '@/components/icons/CheckIcon';
 import EmojiPicker from '@/components/EmojiPicker';
+import ChatSmallIcon from '@/components/icons/ChatSmallIcon';
 
 export default function ChatMessageOptions(props: {
   whom: string;
   writ: ChatWrit;
   hideReply?: boolean;
+  setThreadInset?: (thread: string) => void;
 }) {
-  const { whom, writ, hideReply } = props;
+  const { whom, writ, hideReply, setThreadInset } = props;
+  const isDm = whomIsDm(whom);
   const groupFlag = useRouteGroup();
   const isAdmin = useAmAdmin(groupFlag);
   const { didCopy, doCopy } = useCopy(
@@ -39,6 +42,10 @@ export default function ChatMessageOptions(props: {
 
   const reply = useCallback(() => {
     useChatStore.getState().reply(whom, writ.seal.id);
+  }, [writ, whom]);
+
+  const replyInline = useCallback(() => {
+    useChatStore.getState().replyInline(whom, writ.seal.id);
   }, [writ, whom]);
 
   const onEmoji = useCallback(
@@ -82,9 +89,17 @@ export default function ChatMessageOptions(props: {
             icon={<HashIcon className="h-6 w-6 text-gray-400" />}
             label="Start Thread"
             showTooltip
-            action={() => navigate(`message/${writ.seal.id}`)}
+            action={() => setThreadInset ? setThreadInset(writ.seal.id) : navigate(`message/${writ.seal.id}`)}
           />
         </>
+      ) : null}
+      {!writ.memo.replying && writ.memo.replying?.length !== 0 && !hideReply && !isDm ? (
+        <IconButton
+          icon={<BubbleIcon className="h-6 w-6 text-gray-400" />}
+          label="Reply"
+          showTooltip
+          action={replyInline}
+        />
       ) : null}
       {groupFlag ? (
         <IconButton

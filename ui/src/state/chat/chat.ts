@@ -1043,7 +1043,7 @@ export function useWritByFlagAndGraphIndex(
           useChatState.getState().batchSet((draft) => {
             draft.loadedGraphRefs[chFlag + index] = 'loading';
           });
-          const { writ } = await subscribeOnce(
+          const { writ } = await subscribeOnce<any>(
             'chat',
             `/hook/${chFlag}${index}`
           );

@@ -1,5 +1,6 @@
 import cookies from 'browser-cookies';
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState, useMemo } from 'react';
+import { FaComment, FaBell } from 'react-icons/fa';
 import { Helmet } from 'react-helmet';
 import {
   BrowserRouter as Router,
@@ -11,10 +12,11 @@ import {
   NavigateFunction,
 } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
 import Groups from '@/groups/Groups';
 import Channel from '@/channels/Channel';
-import { useGroupState } from '@/state/groups';
-import { useChatState } from '@/state/chat';
+import { useGroup, useGroupState, useRouteGroup } from '@/state/groups';
+import { useBriefs, useChatState, usePendingDms, usePendingMultiDms } from '@/state/chat';
 import api, { IS_MOCK } from '@/api';
 import Dms from '@/dms/Dms';
 import NewDM from '@/dms/NewDm';
@@ -51,7 +53,9 @@ import EditProfile from '@/profiles/EditProfile/EditProfile';
 import HeapDetail from '@/heap/HeapDetail';
 import groupsFavicon from '@/assets/groups.svg';
 import talkFavicon from '@/assets/talk.svg';
-import { TooltipProvider } from '@radix-ui/react-tooltip';
+import logo from '@/assets/logo192.png';
+import escapeFavicon from '@/assets/escape-favicon.png';
+
 import { useHeapState } from './state/heap/heap';
 import { useDiaryState } from './state/diary';
 import useHarkState from './state/hark';
@@ -80,8 +84,15 @@ import MobileGroupsActions from './groups/MobileGroupsActions';
 import MobileGroupRoot from './nav/MobileGroupRoot';
 import MobileGroupActions from './groups/MobileGroupActions';
 import { useStorage } from './state/storage';
-import { isTalk } from './logic/utils';
+import { isChannelInset, isTalk } from './logic/utils';
 import bootstrap from './state/bootstrap';
+import { postReactNativeMessage, svgDataURL, whomIsDm, whomIsMultiDm } from './logic/utils';
+import { favicon } from './components/Avatar';
+import ChatSmallIcon from './components/icons/ChatSmallIcon';
+import { useNotifications } from './notifications/useNotifications';
+import ActivityIndicator from './components/Sidebar/ActivityIndicator';
+import { useChannelUnreadCounts } from './logic/useIsChannelUnread';
+import { selMessagesFilter } from './dms/MessagesSidebar';
 
 const DiaryAddNote = React.lazy(() => import('./diary/DiaryAddNote'));
 const SuspendedDiaryAddNote = (
@@ -98,17 +109,18 @@ const SuspendedDiaryAddNote = (
   </Suspense>
 );
 
-const appHead = (appName: string) => {
+// () => <Avatar size="xs" ship={window.our} />
+const appHead = (appName: string, notificationCount?: number) => {
   switch (appName) {
     case 'chat':
       return {
-        title: 'Talk',
-        icon: talkFavicon,
+        title: `${notificationCount ? `(${notificationCount}) ` : ''}${window.our}`,
+        icon: escapeFavicon,
       };
     default:
       return {
-        title: 'Groups',
-        icon: groupsFavicon,
+        title: `${notificationCount ? `(${notificationCount}) ` : ''}${window.our}`,
+        icon: escapeFavicon,
       };
   }
 };
@@ -118,9 +130,10 @@ interface RoutesProps {
   location: Location;
   isMobile: boolean;
   isSmall: boolean;
+  channelInset: boolean;
 }
 
-function ChatRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
+function ChatRoutes({ state, location, isMobile, isSmall, channelInset }: RoutesProps) {
   return (
     <>
       <Routes location={state?.backgroundLocation || location}>
@@ -134,7 +147,7 @@ function ChatRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
             element={
               <Notifications
                 child={DMNotification}
-                title={`• ${appHead('chat').title}`}
+                title={`Notifications • ${appHead('chat').title}`}
               />
             }
           />
@@ -165,11 +178,11 @@ function ChatRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
             <Route path="channels/chat/:chShip/:chName">
               <Route
                 index
-                element={<ChatChannel title={` • ${appHead('').title}`} />}
+                element={<ChatChannel title={`${appHead('').title}`} />}
               />
               <Route
                 path="*"
-                element={<ChatChannel title={` • ${appHead('').title}`} />}
+                element={<ChatChannel title={`${appHead('').title}`} />}
               >
                 {isSmall ? null : (
                   <Route
@@ -210,12 +223,73 @@ function ChatRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
   );
 }
 
-function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
+function GroupsRoutes({ state, location, isMobile, isSmall, channelInset }: RoutesProps) {
+  useEffect(() => {
+    postReactNativeMessage({ type: 'navigation-change', pathname: location.pathname });
+  }, [location]);
+
+  const flag = useRouteGroup();
+  const { count: notifCount } = useNotifications(flag);
+  const { messagesFilter } = useSettingsState(selMessagesFilter);
+  const dmUnreads = useChannelUnreadCounts({ scope: messagesFilter });
+
+  const count = notifCount + dmUnreads;
+
   return (
     <>
       <Routes location={state?.backgroundLocation || location}>
-        <Route element={<GroupsNav />}>
-          <Route element={isMobile ? <MobileSidebar /> : undefined}>
+        {/* <Route element={<Nav />}> */}
+        <Route element={<GroupsNav show={!isMobile && !channelInset} />}>
+          <Route
+            index
+            element={isMobile ? <GroupsNav show /> :
+              <>
+                <Notifications
+                  child={GroupNotification}
+                  title={`${appHead('', count).title}`}
+                />
+                {/* <Notifications
+                  child={DMNotification}
+                /> */}
+              </>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <>
+                <Notifications
+                  child={GroupNotification}
+                  title={`${appHead('', count).title}`}
+                />
+                {/* <Notifications
+                  child={DMNotification}
+                /> */}
+              </>
+            }
+          />
+          {/* Find by Invite URL */}
+          <Route
+            path="/find/:ship/:name"
+            element={
+              <FindGroups title={`Find Groups • ${appHead('', count).title}`} />
+            }
+          />
+          {/* Find by Nickname or @p */}
+          <Route
+            path="/find/:ship"
+            element={
+              <FindGroups title={`Find Groups • ${appHead('', count).title}`} />
+            }
+          />
+          <Route
+            path="/find"
+            element={
+              <FindGroups title={`Find Groups • ${appHead('', count).title}`} />
+            }
+          />
+          <Route path="/:ship/:name" element={<Groups />} />
+          <Route path="groups/:ship/:name/*" element={<Groups />}>
             <Route
               index
               element={
@@ -224,49 +298,49 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
                 ) : (
                   <Notifications
                     child={GroupNotification}
-                    title={`All Notifications • ${appHead('').title}`}
+                    title={`All Notifications • ${appHead('', count).title}`}
                   />
                 )
               }
             />
             <Route
-              path="/notifications"
+              path="notifications"
               element={
                 <MainWrapper isMobile={isMobile}>
                   <Notifications
                     child={GroupNotification}
-                    title={`All Notifications • ${appHead('').title}`}
+                    title={`All Notifications • ${appHead('', count).title}`}
                   />
                 </MainWrapper>
               }
             />
             {/* Find by Invite URL */}
             <Route
-              path="/find/:ship/:name"
+              path="find/:ship/:name"
               element={
-                <FindGroups title={`Find Groups • ${appHead('').title}`} />
+                <FindGroups title={`Find Groups • ${appHead('', count).title}`} />
               }
             />
             {/* Find by Nickname or @p */}
             <Route
-              path="/find/:ship"
+              path="find/:ship"
               element={
-                <FindGroups title={`Find Groups • ${appHead('').title}`} />
+                <FindGroups title={`Find Groups • ${appHead('', count).title}`} />
               }
             />
             <Route
-              path="/find"
+              path="find"
               element={
-                <FindGroups title={`Find Groups • ${appHead('').title}`} />
+                <FindGroups title={`Find Groups • ${appHead('', count).title}`} />
               }
             />
             <Route
-              path="/profile/edit"
+              path="profile/edit"
               element={
-                <EditProfile title={`Edit Profile • ${appHead('').title}`} />
+                <EditProfile title={`Edit Profile • ${appHead('', count).title}`} />
               }
             />
-            <Route path="/actions" element={<MobileGroupsActions />} />
+            <Route path="actions" element={<MobileGroupsActions />} />
           </Route>
           <Route path="/groups/:ship/:name" element={<Groups />}>
             <Route element={isMobile ? <MobileGroupSidebar /> : undefined}>
@@ -277,7 +351,7 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
                   <GroupWrapper isMobile={isMobile}>
                     <Notifications
                       child={GroupNotification}
-                      title={`• ${appHead('').title}`}
+                      title={`• ${appHead('', count).title}`}
                     />
                   </GroupWrapper>
                 }
@@ -285,11 +359,11 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
               <Route path="info" element={<GroupAdmin />}>
                 <Route
                   index
-                  element={<GroupInfo title={`• ${appHead('').title}`} />}
+                  element={<GroupInfo title={`• ${appHead('', count).title}`} />}
                 />
                 <Route
                   path="members"
-                  element={<GroupMembers title={`• ${appHead('').title}`} />}
+                  element={<GroupMembers title={`• ${appHead('', count).title}`} />}
                 >
                   <Route index element={<GroupMemberManager />} />
                   <Route path="pending" element={<GroupPendingManager />} />
@@ -298,13 +372,13 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
                 <Route
                   path="channels"
                   element={
-                    <GroupChannelManager title={`• ${appHead('').title}`} />
+                    <GroupChannelManager title={`• ${appHead('', count).title}`} />
                   }
                 />
               </Route>
               <Route
                 path="channels"
-                element={<ChannelIndex title={` • ${appHead('').title}`} />}
+                element={<ChannelIndex title={` • ${appHead('', count).title}`} />}
               />
               <Route path="actions" element={<MobileGroupActions />} />
             </Route>
@@ -315,11 +389,11 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
             <Route path="channels/chat/:chShip/:chName">
               <Route
                 index
-                element={<ChatChannel title={` • ${appHead('').title}`} />}
+                element={<ChatChannel title={` • ${appHead('', count).title}`} />}
               />
               <Route
                 path="*"
-                element={<ChatChannel title={` • ${appHead('').title}`} />}
+                element={<ChatChannel title={` • ${appHead('', count).title}`} />}
               >
                 {isSmall ? null : (
                   <Route
@@ -338,7 +412,7 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
             <Route path="channels/heap/:chShip/:chName">
               <Route
                 index
-                element={<HeapChannel title={` • ${appHead('').title}`} />}
+                element={<HeapChannel title={` • ${appHead('', count).title}`} />}
               />
               <Route path="curio/:idCurio" element={<HeapDetail />} />
             </Route>
@@ -350,6 +424,30 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
                 <Route path=":id" element={SuspendedDiaryAddNote} />
               </Route>
             </Route>
+          </Route>
+          <Route
+            path="/profile/edit"
+            element={
+              <EditProfile title={`Edit Profile • ${appHead('', count).title}`} />
+            }
+          />
+          <Route path="/dm/" element={<Dms />}>
+            <Route index element={isMobile ? <GroupsNav show /> : <DMHome />} />
+            <Route path="new" element={<NewDM />} />
+            <Route path=":ship" element={<Message />}>
+              {isSmall ? null : (
+                <Route
+                  path="message/:idShip/:idTime"
+                  element={<ChatThread />}
+                />
+              )}
+            </Route>
+            {isSmall && (
+              <Route
+                path=":ship/message/:idShip/:idTime"
+                element={<ChatThread />}
+              />
+            )}
           </Route>
         </Route>
       </Routes>
@@ -381,6 +479,7 @@ function GroupsRoutes({ state, location, isMobile, isSmall }: RoutesProps) {
             element={<NewChannelModal />}
           />
           <Route path="/profile/:ship" element={<ProfileModal />} />
+          <Route path="/dm/:id/edit-info" element={<MultiDMEditModal />} />
         </Routes>
       ) : null}
     </>
@@ -416,6 +515,44 @@ function handleGridRedirect(navigate: NavigateFunction) {
   }
 }
 
+function MobileBottomNav() {
+  const navigate = useNavigate();
+  const { notifications } = useNotifications('');
+
+  const { messagesFilter } = useSettingsState(selMessagesFilter);
+  const dmUnreads = useChannelUnreadCounts({ scope: messagesFilter });
+
+  const notificationCount = useMemo(() => notifications.reduce((acc, notification) =>
+    acc + notification.bins.reduce((binAcc, bin) =>
+      binAcc + (bin.unread ? bin.count : 0)
+    , 0)
+  , 0), [notifications]);
+
+  return (
+    <div className='fixed bottom-0 flex h-12 w-full flex-row justify-around bg-gray-50'>
+      <button className='flex grow items-center justify-center' onClick={() => navigate('/')}>
+        <img className="h-6 w-6" src={logo} alt="Uqbar Logo" />
+      </button>
+      <button className='flex grow items-center justify-center' onClick={() => navigate('/dm/')}>
+        <div className='relative h-6 w-6'>
+          <FaComment className="h-6 w-6" />
+          {dmUnreads > 0 && (
+            <ActivityIndicator bg='bg-blue-400' className='absolute -top-1 -right-2 h-4 w-4 rounded-full text-white' count={dmUnreads} />
+          )}
+        </div>
+      </button>
+      <button className='flex grow items-center justify-center' onClick={() => navigate('/notifications')}>
+        <div className='relative h-6 w-6'>
+          <FaBell className="h-6 w-6" />
+          {notificationCount > 0 && (
+            <ActivityIndicator bg='bg-blue-300' className='absolute -top-1 -right-2 h-4 w-4 rounded-full' count={notificationCount} />
+          )}
+        </div>
+      </button>
+    </div>
+  );
+}
+
 function App() {
   const navigate = useNavigate();
   const handleError = useErrorHandler();
@@ -425,6 +562,7 @@ function App() {
   const subscription = useSubscriptionStatus();
   const errorCount = useErrorCount();
   const airLockErrorCount = useAirLockErrorCount();
+  const [channelInset] = useState(isChannelInset());
 
   useEffect(() => {
     handleError(() => {
@@ -451,7 +589,7 @@ function App() {
   }, [errorCount, subscription, airLockErrorCount]);
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full w-full flex-col" style={{ height: isMobile ? 'calc(100% - 48px)' : '100%' }}>
       {subscription === 'disconnected' || subscription === 'reconnecting' ? (
         <DisconnectNotice />
       ) : null}
@@ -463,6 +601,7 @@ function App() {
             location={location}
             isMobile={isMobile}
             isSmall={isSmall}
+            channelInset={channelInset}
           />
         </>
       ) : (
@@ -471,8 +610,10 @@ function App() {
           location={location}
           isMobile={isMobile}
           isSmall={isSmall}
+          channelInset={channelInset}
         />
       )}
+      {isMobile && !channelInset && <MobileBottomNav />}
     </div>
   );
 }
@@ -491,7 +632,7 @@ function RoutedApp() {
       case 'chat':
         return '/apps/talk';
       default:
-        return '/apps/groups';
+        return '/apps/escape';
     }
   };
 

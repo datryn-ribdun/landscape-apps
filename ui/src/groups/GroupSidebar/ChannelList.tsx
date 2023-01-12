@@ -21,15 +21,16 @@ import useChannelSections from '@/logic/useChannelSections';
 import { GroupChannel } from '@/types/groups';
 import Divider from '@/components/Divider';
 import ChannelIcon from '@/channels/ChannelIcon';
-import { useCheckChannelUnread } from '@/logic/useIsChannelUnread';
+import { useCheckChannelNotification, useCheckChannelUnreadCount } from '@/logic/useIsChannelUnread';
 import UnreadIndicator from '@/components/Sidebar/UnreadIndicator';
 import usePendingImports from '@/logic/usePendingImports';
 import Bullet16Icon from '@/components/icons/Bullet16Icon';
-import HashIcon16 from '@/components/icons/HashIcon16';
 import MigrationTooltip from '@/components/MigrationTooltip';
 import { useStartedMigration } from '@/logic/useMigrationInfo';
 import useFilteredSections from '@/logic/useFilteredSections';
 import ChannelSortOptions from './ChannelSortOptions';
+import ActivityIndicator from '@/components/Sidebar/ActivityIndicator';
+import usePrefetchChannels from '@/logic/usePrefetchChannels';
 
 const UNZONED = 'default';
 
@@ -39,6 +40,7 @@ type ChannelSorterProps = {
 
 interface ChannelListProps {
   flag: string;
+  focusUnread?: boolean;
   className?: string;
 }
 
@@ -99,7 +101,7 @@ function UnmigratedChannel({
   );
 }
 
-export default function ChannelList({ flag, className }: ChannelListProps) {
+export default function ChannelList({ flag, focusUnread = false, className }: ChannelListProps) {
   const group = useGroup(flag);
   const briefs = useAllBriefs();
   const pendingImports = usePendingImports();
@@ -110,7 +112,10 @@ export default function ChannelList({ flag, className }: ChannelListProps) {
   const filteredSections = useFilteredSections(flag, true);
   const isMobile = useIsMobile();
   const vessel = useVessel(flag, window.our);
-  const isChannelUnread = useCheckChannelUnread();
+  const channelHasNotification = useCheckChannelNotification();
+  const getChannelUnreadCount = useCheckChannelUnreadCount();
+
+  usePrefetchChannels(flag);
 
   if (!group) {
     return null;
@@ -129,22 +134,23 @@ export default function ChannelList({ flag, className }: ChannelListProps) {
         const { ship } = getFlagParts(chFlag);
         const imported =
           isChannelImported(nest, pendingImports) && hasStarted(ship);
+
         const icon = (active: boolean) =>
           isMobile ? (
             <span
               className={cn(
-                'flex h-12 w-12 items-center justify-center rounded-md',
+                'flex h-6 w-6 items-center justify-center rounded-md',
                 !imported && 'opacity-60',
                 !active && 'bg-gray-50',
                 active && 'bg-white'
               )}
             >
-              <ChannelIcon nest={nest} className="h-6 w-6" />
+              <ChannelIcon nest={nest} className="h-4 w-4" />
             </span>
           ) : (
             <ChannelIcon
               nest={nest}
-              className={cn('h-6 w-6', !imported && 'opacity-60')}
+              className={cn('h-4 w-4', !imported && 'opacity-60')}
             />
           );
 
@@ -159,13 +165,24 @@ export default function ChannelList({ flag, className }: ChannelListProps) {
           );
         }
 
+        const unreadCount = getChannelUnreadCount(nest);
+        const hasNotification = channelHasNotification(nest);
+
+        if (focusUnread && unreadCount < 1) {
+          return null;
+        }
+
         return (
           <SidebarItem
             inexact
             key={nest}
             icon={icon}
             to={channelHref(flag, nest)}
-            actions={isChannelUnread(nest) ? <UnreadIndicator /> : null}
+            // onClick={hide}
+            actions={unreadCount ? <ActivityIndicator count={unreadCount} className={cn(hasNotification && "text-blue")} /> :
+              hasNotification ? <UnreadIndicator className="text-blue m-1 h-4 w-4" aria-label="Has Activity" /> :
+            null}
+            style={{ fontSize: 13 }}
           >
             {channel.meta.title || nest}
           </SidebarItem>
@@ -178,7 +195,7 @@ export default function ChannelList({ flag, className }: ChannelListProps) {
 
   return (
     <div className={className}>
-      {isMobile && (
+      {/* {isMobile && (
         <SidebarItem
           icon={
             <div className="flex h-12 w-12 items-center justify-center rounded-md bg-gray-50">
@@ -192,7 +209,9 @@ export default function ChannelList({ flag, className }: ChannelListProps) {
         </SidebarItem>
       )}
       {!isMobile && <ChannelSorter isMobile={false} />}
-      <ul className={cn('space-y-1', isMobile && 'flex-none space-y-3')}>
+      <ul className={cn('space-y-1', isMobile && 'flex-none space-y-3')}> */}
+      {false && <ChannelSorter isMobile={false} />}
+      <ul className={cn(isMobile && 'flex-none space-y-3')}>
         {isDefaultSort
           ? filteredSections.map((s) => (
               <div className="space-y-1" key={s}>

@@ -28,6 +28,7 @@ export default function BaitReference({
   const nest = agent ? `${agent}/${graph}` : null;
   const id = udToDec(segments[0]);
   const hasMigrated = useHasMigratedChannels(bait.group);
+  console.log(5)
 
   if (!hasMigrated) {
     return (
